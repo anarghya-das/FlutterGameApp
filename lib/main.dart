@@ -1,119 +1,63 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
+import 'package:audioplayers/audio_cache.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Welcome to Flutter',
-      theme: new ThemeData(primaryColor: Colors.black),
+void main() => runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
-        drawer: Drawer(),
-        appBar: AppBar(centerTitle: true, title: Text("Guess The Number!")),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: new Icon(Icons.home),
-              title: new Text('Home'),
-            ),
-            BottomNavigationBarItem(
-              icon: new Icon(Icons.mail),
-              title: new Text('Messages'),
-            ),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), title: Text('Profile'))
-          ],
-        ),
-        body: ListView(
-          children: [
-            Image.asset(
-              'images/ask.png',
-              width: 600.0,
-              height: 240.0,
-              fit: BoxFit.cover,
-            ),
-            SizedBox(height: 20.0),
-            NameTap("Number")
-          ],
-        ),
+        body: MyApp(),
       ),
-    );
-  }
+    ));
+
+class MyApp extends StatefulWidget {
+  @override
+  MyAppState createState() => MyAppState();
 }
 
-class WidgetBuilder extends StatelessWidget {
-  final String name;
+class MyAppState extends State<MyApp> {
+  Color bcolor=Colors.blue;
+  Timer timer;
+  var r = new math.Random();
+  static AudioCache player = new AudioCache();
 
-  WidgetBuilder(this.name);
+  @override
+  void initState() {
+    super.initState();
+    player.loop('kahoot.mp3');
+    timer = new Timer.periodic(new Duration(seconds: 2), (Timer timer) {
+      setState(() {
+        bcolor =
+            Color.fromRGBO(r.nextInt(255), r.nextInt(255), r.nextInt(255), 1);
+      });
+    });
+  }
 
+  static var selectedItem;
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-        decoration: BoxDecoration(color: Colors.lightBlueAccent),
-        child: Padding(
-          padding: const EdgeInsets.all(9.0),
-          child: Text(name,
-              style: TextStyle(fontSize: 20, color: Colors.white),
-              textAlign: TextAlign.center),
-        ));
-  }
-}
-
-class NameTap extends StatefulWidget {
-  final String _name;
-
-  NameTap(this._name);
-  @override
-  _NameTapState createState() => _NameTapState(_name);
-}
-
-class _NameTapState extends State<NameTap> {
-  int count = 0;
-  String _name;
-  _NameTapState(this._name);
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (count == 11) {
-            count = 0;
-          } else {
-            count++;
-          }
-        });
-      },
-      child: conditionText(_name, count),
-    );
-  }
-}
-
-class conditionText extends StatelessWidget {
-  final String n;
-  final int c;
-  conditionText(this.n, this.c);
-  @override
-  Widget build(BuildContext context) {
-    if (c == 0) {
-      return Text(
-        "$n : $c is neither even nor odd!",
-        textAlign: TextAlign.center,
+    return AnimatedContainer(
+      duration: Duration(seconds: 2),
+      color: bcolor,
+      child: Center(
+          child: DropdownButton<String>(
+        items: <String>['50', '100', '200', '500', '1000'].map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        hint: Text("Select a Game Mode"),
+        onChanged: (value) {
+          selectedItem = value;
+          print("You selected $value");
+          Scaffold.of(context).showSnackBar( SnackBar(content: Text("You selected $selectedItem")));
+        },
+        value: selectedItem,
         style: TextStyle(
-            fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold),
-      );
-    }
-    if (c % 2 == 0) {
-      return Text("$n : $c is even!",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold));
-    } else {
-      return Text("$n : $c is odd!",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold));
-    }
+          color: Colors.black,
+        ),
+      )),
+    );
   }
 }
