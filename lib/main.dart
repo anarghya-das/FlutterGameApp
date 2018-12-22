@@ -110,8 +110,6 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       MaterialPageRoute(
                         builder: (context) => GameScreen(value, audioPlayer),
                       ));
-                  // Scaffold.of(context).showSnackBar(
-                  //     SnackBar(content: Text("You selected $selectedItem")));
                 },
                 value: selectedItem,
                 style: TextStyle(
