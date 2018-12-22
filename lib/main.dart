@@ -6,11 +6,7 @@ import 'package:audioplayers/audio_cache.dart';
 
 void main() => runApp(MainScreen());
 
-class MainScreen extends StatelessWidget with WidgetsBindingObserver{
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) => print("State Changed!");
-
+class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,7 +16,6 @@ class MainScreen extends StatelessWidget with WidgetsBindingObserver{
       ),
     );
   }
-
 }
 
 class MyApp extends StatefulWidget {
@@ -34,11 +29,11 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   var r = new math.Random();
   static AudioCache player = new AudioCache();
   Future<AudioPlayer> audioPlayer;
-  AudioPlayer ap;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     audioPlayer = player.loop('kahoot.mp3');
     timer = new Timer.periodic(new Duration(seconds: 2), (Timer timer) {
       setState(() {
@@ -46,6 +41,30 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
             Color.fromRGBO(r.nextInt(255), r.nextInt(255), r.nextInt(255), 1);
       });
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        audioPlayer.then((AudioPlayer val) => val.pause());
+        break;
+      case AppLifecycleState.resumed:
+        audioPlayer.then((AudioPlayer val) => val.resume());
+        break;
+      case AppLifecycleState.inactive:
+        audioPlayer.then((AudioPlayer val) => val.pause());
+        break;
+      case AppLifecycleState.suspending:
+        audioPlayer.then((AudioPlayer val) => val.pause());
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   static var selectedItem;
@@ -86,9 +105,11 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 onChanged: (value) {
                   selectedItem = value;
                   audioPlayer.then((AudioPlayer val) => val.pause());
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => GameScreen(value),
-                  ));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GameScreen(value, audioPlayer),
+                      ));
                   // Scaffold.of(context).showSnackBar(
                   //     SnackBar(content: Text("You selected $selectedItem")));
                 },
@@ -108,16 +129,18 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
 class GameScreen extends StatefulWidget {
   final String _gameValue;
-  GameScreen(this._gameValue);
+  final Future<AudioPlayer> ap;
+  GameScreen(this._gameValue, this.ap);
   @override
   State<StatefulWidget> createState() {
-    return GameScreenState(_gameValue);
+    return GameScreenState(_gameValue, ap);
   }
 }
 
 class GameScreenState extends State<GameScreen> {
   String _gameValue;
-  GameScreenState(this._gameValue);
+  Future<AudioPlayer> ap;
+  GameScreenState(this._gameValue, this.ap);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -130,6 +153,7 @@ class GameScreenState extends State<GameScreen> {
             RaisedButton(
               child: Text("Back"),
               onPressed: () {
+                ap.then((AudioPlayer val) => val.resume());
                 Navigator.pop(context);
               },
             )
