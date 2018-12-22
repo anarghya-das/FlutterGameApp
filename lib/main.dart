@@ -107,7 +107,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 }
 
 class GameScreen extends StatefulWidget {
-  String _gameValue;
+  final String _gameValue;
   GameScreen(this._gameValue);
   @override
   State<StatefulWidget> createState() {
