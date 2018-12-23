@@ -24,7 +24,15 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  Color bcolor = Colors.blue;
+  static List<Color> _backColors = [
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.red
+  ];
+  static List<String> _gameModes = ['50', '100', '200', '500'];
+  int idx = 0;
+  Color bcolor = _backColors[0];
   Timer timer;
   var r = new math.Random();
   static AudioCache player = new AudioCache();
@@ -37,8 +45,12 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     audioPlayer = player.loop('kahoot.mp3');
     timer = new Timer.periodic(new Duration(seconds: 2), (Timer timer) {
       setState(() {
-        bcolor =
-            Color.fromRGBO(r.nextInt(255), r.nextInt(255), r.nextInt(255), 1);
+        idx++;
+        if (idx >= _backColors.length) {
+          idx = 0;
+        }
+        // Color.fromRGBO(r.nextInt(255), r.nextInt(255), r.nextInt(255), 1);
+        bcolor = _backColors[idx];
       });
     });
   }
@@ -67,7 +79,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  static var selectedItem;
+  static String _selectedItem;
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -75,11 +87,11 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       color: bcolor,
       child: Center(
           child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child: Image.asset("images/ask.png"),
+            child: Image.asset("images/ask2.png"),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -92,10 +104,9 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Theme(
-              data: Theme.of(context).copyWith(canvasColor: Colors.black),
+              data: Theme.of(context).copyWith(canvasColor: Colors.white),
               child: DropdownButton<String>(
-                items: <String>['50', '100', '200', '500', '1000']
-                    .map((String value) {
+                items: _gameModes.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -103,17 +114,18 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 }).toList(),
                 hint: Text("Select a Game Mode"),
                 onChanged: (value) {
-                  selectedItem = value;
+                  _selectedItem = value;
                   audioPlayer.then((AudioPlayer val) => val.pause());
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => GameScreen(value, audioPlayer),
+                        builder: (context) => GameScreen(value, audioPlayer,
+                            _backColors[_gameModes.indexOf(_selectedItem)]),
                       ));
                 },
-                value: selectedItem,
+                value: _selectedItem,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 20,
                 ),
               ),
@@ -128,34 +140,128 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 class GameScreen extends StatefulWidget {
   final String _gameValue;
   final Future<AudioPlayer> ap;
-  GameScreen(this._gameValue, this.ap);
+  final Color bgcol;
+  GameScreen(this._gameValue, this.ap, this.bgcol);
   @override
   State<StatefulWidget> createState() {
-    return GameScreenState(_gameValue, ap);
+    return GameScreenState(_gameValue, ap, bgcol);
   }
 }
 
 class GameScreenState extends State<GameScreen> {
   String _gameValue;
   Future<AudioPlayer> ap;
-  GameScreenState(this._gameValue, this.ap);
+  Color bgcol;
+  GlobalKey<FormState> _formKey = new GlobalKey();
+  GameScreenState(this._gameValue, this.ap, this.bgcol);
+  String _result = "";
+  int _numberToGuess;
+  int _guessFreq = 0;
+  bool _gameOver = false;
+
+  void generateNumbertoGuess() {
+    var rnd = new math.Random();
+    _numberToGuess = rnd.nextInt(int.parse(_gameValue));
+  }
+
+  void buttonPress() {
+    if (_gameOver) {
+      return null;
+    } else {
+      var st = _formKey.currentState;
+      st.validate();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    generateNumbertoGuess();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Center(child: Text("Welcome to the Game Mode: $_gameValue")),
-            RaisedButton(
-              child: Text("Back"),
-              onPressed: () {
-                ap.then((AudioPlayer val) => val.resume());
-                Navigator.pop(context);
-              },
-            )
-          ],
+    return WillPopScope(
+      onWillPop: () {
+        ap.then((AudioPlayer val) => val.resume());
+        Navigator.pop(context);
+      },
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: bgcol,
+          body: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Center(
+                    child: Text(
+                  "Welcome to the Game Mode: $_gameValue",
+                  style: TextStyle(
+                      fontSize: 25,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold),
+                )),
+                Container(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      _result,
+                      style: TextStyle(color: Colors.black, fontSize: 20),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: TextFormField(
+                    maxLength: 3,
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "Can't process blank guess.";
+                      } else if (double.tryParse(value) == null) {
+                        return "Enter proper Number for guess.";
+                      } else {
+                        var userGuess = int.parse(value);
+                        if (userGuess < _numberToGuess) {
+                          setState(() {
+                            _guessFreq++;
+                            _result =
+                                "Number to Guess is higher than Current Guess\nGuesses used: $_guessFreq";
+                          });
+                        } else if (userGuess > _numberToGuess) {
+                          setState(() {
+                            _guessFreq++;
+                            _result =
+                                "Number to Guess is lower than Current Guess\nGuesses used: $_guessFreq";
+                          });
+                        } else {
+                          setState(() {
+                            _result =
+                                "You guessed it correctly! You used $_guessFreq Guesses!";
+                            _gameOver = true;
+                          });
+                        }
+                      }
+                    },
+                    keyboardType: TextInputType.numberWithOptions(),
+                    decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        labelText: "Enter the number to guess",
+                        labelStyle: TextStyle(color: Colors.black)),
+                  ),
+                ),
+                RaisedButton(
+                  child: Text("Submit"),
+                  onPressed: () {
+                    buttonPress();
+                  },
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
