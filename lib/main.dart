@@ -105,7 +105,6 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  static String _selectedItem;
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
