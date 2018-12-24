@@ -12,7 +12,33 @@ class MainScreen extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: MyApp(),
+        body: NestedScrollView(
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return <Widget>[
+              SliverAppBar(
+                expandedHeight: 200.0,
+                floating: false,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  title: Text(
+                    "Guess the Number!",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20.0,
+                    ),
+                  ),
+                  background: Image.asset(
+                    "images/ask.png",
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ];
+          },
+          body: MyApp(),
+        ),
       ),
     );
   }
@@ -30,7 +56,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     Colors.yellow,
     Colors.red
   ];
-  static List<String> _gameModes = ['50', '100', '200', '500'];
+  final List<String> _gameModes = ['50', '100', '200', '500'];
   int idx = 0;
   Color bcolor = _backColors[0];
   Timer timer;
@@ -90,51 +116,52 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.asset("images/ask2.png"),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.only(
+                top: 100, left: 10, right: 10, bottom: 20),
             child: Text(
               "Choose a Game Mode to Start!",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 30.0, color: Colors.white),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Theme(
-              data: Theme.of(context).copyWith(canvasColor: Colors.white),
-              child: DropdownButton<String>(
-                items: _gameModes.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                hint: Text("Select a Game Mode"),
-                onChanged: (value) {
-                  _selectedItem = value;
-                  audioPlayer.then((AudioPlayer val) => val.pause());
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GameScreen(value, audioPlayer,
-                            _backColors[_gameModes.indexOf(_selectedItem)]),
-                      ));
-                },
-                value: _selectedItem,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-              ),
-            ),
-          )
+          Expanded(child: listBuild())
         ],
       )),
     );
   }
+
+  Widget _buildRow(int idx) {
+    var t = _gameModes[idx];
+    return ListTile(
+        leading: CircleAvatar(
+          child: Text('$t'),
+        ),
+        onTap: () {
+          audioPlayer.then((AudioPlayer val) => val.pause());
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GameScreen(t, audioPlayer,
+                    _backColors[idx]),
+              ));
+        },
+        title: Text(
+          "Guess from 0 to $t",
+          style: TextStyle(fontSize: 18.0),
+        ));
+  }
+
+  Widget listBuild(){
+    return ListView.separated(
+              itemCount: _gameModes.length,
+              padding: const EdgeInsets.all(16.0),
+              separatorBuilder: (context,i) => Divider(),
+              itemBuilder: (context, i) {
+              // if (i.isOdd) return Divider();
+              return _buildRow(i);
+  });
+  }
+
 }
 
 class GameScreen extends StatefulWidget {
@@ -154,13 +181,14 @@ class GameScreenState extends State<GameScreen> {
   Color bgcol;
   GlobalKey<FormState> _formKey = new GlobalKey();
   GameScreenState(this._gameValue, this.ap, this.bgcol);
-  String _result = "";
+  String _result = "Make a guess!";
   int _numberToGuess;
   int _guessFreq = 0;
   bool _gameOver = false;
+  Color textColor = Colors.black;
+  var rnd = new math.Random();
 
   void generateNumbertoGuess() {
-    var rnd = new math.Random();
     _numberToGuess = rnd.nextInt(int.parse(_gameValue));
   }
 
@@ -203,7 +231,15 @@ class GameScreenState extends State<GameScreen> {
                       color: Colors.black,
                       fontWeight: FontWeight.bold),
                 )),
-                Container(
+                AnimatedContainer(
+                  duration: Duration(seconds: 2),
+                  margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                  decoration: BoxDecoration(
+                      color: textColor,
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.horizontal(
+                          right: Radius.elliptical(50, 50),
+                          left: Radius.elliptical(50, 50))),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -223,6 +259,10 @@ class GameScreenState extends State<GameScreen> {
                       } else if (double.tryParse(value) == null) {
                         return "Enter proper Number for guess.";
                       } else {
+                        setState(() {
+                          textColor = Color.fromRGBO(rnd.nextInt(255),
+                              rnd.nextInt(255), rnd.nextInt(255), 1);
+                        });
                         var userGuess = int.parse(value);
                         if (userGuess < _numberToGuess) {
                           setState(() {
@@ -254,6 +294,8 @@ class GameScreenState extends State<GameScreen> {
                   ),
                 ),
                 RaisedButton(
+                  animationDuration: Duration(seconds: 4),
+                  color: textColor,
                   child: Text("Submit"),
                   onPressed: () {
                     buttonPress();
