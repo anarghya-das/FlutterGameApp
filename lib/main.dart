@@ -76,7 +76,6 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         if (idx >= _backColors.length) {
           idx = 0;
         }
-        // Color.fromRGBO(r.nextInt(255), r.nextInt(255), r.nextInt(255), 1);
         bcolor = _backColors[idx];
       });
     });
@@ -266,9 +265,12 @@ class GameScreenState extends State<GameScreen> {
     }
   }
 
+  ScrollController _scroll;
+
   @override
   void initState() {
     super.initState();
+    _scroll=new ScrollController();
     generateNumbertoGuess();
   }
 
@@ -288,6 +290,7 @@ class GameScreenState extends State<GameScreen> {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           home: Scaffold(
+            // resizeToAvoidBottomPadding: false,
             appBar: AppBar(
               backgroundColor: Colors.black,
               title: Text("Guess Mode: $_gameValue"),
@@ -303,8 +306,9 @@ class GameScreenState extends State<GameScreen> {
             backgroundColor: bgcol,
             body: Form(
               key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+              child: ListView(
+                controller: _scroll,
+                // mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
                   AnimatedContainer(
                     duration: Duration(seconds: 1),
@@ -348,15 +352,18 @@ class GameScreenState extends State<GameScreen> {
                       ),
                     ),
                   ),
-                  RaisedButton(
-                    animationDuration: Duration(seconds: 4),
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
-                    child: Text("Submit"),
-                    onPressed: () {
-                      _buttonPress();
-                    },
+                  Padding(
+                    padding: const EdgeInsets.only(left: 100,right: 100),
+                    child: RaisedButton(
+                      animationDuration: Duration(seconds: 4),
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                      child: Text("Submit"),
+                      onPressed: () {
+                        _buttonPress();
+                      },
+                    ),
                   )
                 ],
               ),
