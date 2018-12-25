@@ -136,6 +136,9 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return ListTile(
         leading: CircleAvatar(
           child: Text('$t'),
+          backgroundColor: _backColors[idx],
+          foregroundColor: Colors.black,
+          radius: 30,
         ),
         onTap: () {
           audioPlayer.then((AudioPlayer val) => val.pause());
@@ -148,7 +151,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         },
         title: Text(
           "Guess from 0 to $t",
-          style: TextStyle(fontSize: 18.0),
+          style: TextStyle(fontSize: 20.0),
         ));
   }
 
@@ -175,12 +178,21 @@ class GameScreen extends StatefulWidget {
 }
 
 class GameScreenState extends State<GameScreen> {
+  static List<Color> _backColors = [
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.red
+  ];
+  int idx = 0;
+  Color _inVal = Colors.white;
   String _gameValue;
   Future<AudioPlayer> ap;
   Color bgcol;
   GlobalKey<FormState> _formKey = new GlobalKey();
   GameScreenState(this._gameValue, this.ap, this.bgcol);
-  String _result = "Make a guess!";
+  String _result =
+      "Can you guess the number that I am thinking?\nGuess the number quickly and win the Game!";
   int _numberToGuess;
   int _guessFreq = 0;
   bool _gameOver = false;
@@ -206,24 +218,49 @@ class GameScreenState extends State<GameScreen> {
       return "Enter proper Number for guess.";
     } else {
       setState(() {
+        if (idx >= _backColors.length) {
+          idx = 0;
+        }
+        if (_backColors[idx] == bgcol) {
+          idx++;
+        }
+        if (idx >= _backColors.length) {
+          idx = 0;
+        }
+        _inVal = _backColors[idx];
+        idx++;
       });
       var userGuess = int.parse(value);
       if (userGuess < _numberToGuess) {
         setState(() {
           _guessFreq++;
           _result =
-              "Number to Guess is higher than Current Guess\nGuesses used: $_guessFreq";
+              "Number to Guess is HIGHER than Current Guess\nGuesses used: $_guessFreq";
         });
       } else if (userGuess > _numberToGuess) {
         setState(() {
           _guessFreq++;
           _result =
-              "Number to Guess is lower than Current Guess\nGuesses used: $_guessFreq";
+              "Number to Guess is LOWER than Current Guess\nGuesses used: $_guessFreq";
         });
       } else {
         setState(() {
-          _result = "You guessed it correctly! You used $_guessFreq Guesses!";
+          _result = "You guessed it correctly!\nYou used $_guessFreq Guesses!";
           _gameOver = true;
+          showDialog<String>(
+              context: context,
+              builder: (context) => AlertDialog(
+                    content: Text(_result),
+                    actions: <Widget>[
+                      FlatButton(
+                        child: Text("Main Menu"),
+                        onPressed: () {
+                          ap.then((AudioPlayer val) => val.resume());
+                          Navigator.popUntil(context,ModalRoute.withName(Navigator.defaultRouteName));
+                        },
+                      )
+                    ],
+                  ));
         });
       }
     }
@@ -251,29 +288,33 @@ class GameScreenState extends State<GameScreen> {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           home: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              title: Text("Guess Mode: $_gameValue"),
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                color: bgcol,
+                onPressed: () {
+                  ap.then((AudioPlayer val) => val.resume());
+                  Navigator.pop(context);
+                },
+              ),
+            ),
             backgroundColor: bgcol,
             body: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
-                  Center(
-                      child: Text(
-                    "Welcome to the Game Mode: $_gameValue",
-                    style: TextStyle(
-                        fontSize: 25,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold),
-                  )),
                   AnimatedContainer(
-                    duration: Duration(seconds: 2),
-                    margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                    duration: Duration(seconds: 1),
+                    margin: EdgeInsets.only(
+                        left: 10, right: 10, top: 70, bottom: 50),
                     decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: _inVal,
                         shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.horizontal(
-                            right: Radius.elliptical(50, 50),
-                            left: Radius.elliptical(50, 50))),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(15))),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
@@ -297,9 +338,7 @@ class GameScreenState extends State<GameScreen> {
                         decoration: InputDecoration(
                             labelText: "Make your Guess",
                             labelStyle: TextStyle(fontSize: 30),
-                            errorStyle: TextStyle(
-                              fontSize: 15,
-                            ) ,
+                            errorStyle: TextStyle(fontSize: 15),
                             border: OutlineInputBorder(
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(10.0)))),
@@ -312,6 +351,8 @@ class GameScreenState extends State<GameScreen> {
                   RaisedButton(
                     animationDuration: Duration(seconds: 4),
                     color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
                     child: Text("Submit"),
                     onPressed: () {
                       _buttonPress();
