@@ -196,6 +196,7 @@ class GameScreenState extends State<GameScreen> {
   int _guessFreq = 0;
   bool _gameOver = false;
   var rnd = new math.Random();
+  AudioCache credits = new AudioCache();
 
   void generateNumbertoGuess() {
     _numberToGuess = rnd.nextInt(int.parse(_gameValue));
@@ -213,8 +214,8 @@ class GameScreenState extends State<GameScreen> {
   String _validate(String value) {
     if (value.isEmpty) {
       return "Can't process blank guess.";
-    } else if (double.tryParse(value) == null) {
-      return "Enter proper Number for guess.";
+    } else if (int.tryParse(value) == null) {
+      return "Enter proper INTEGER number for your guess.";
     } else {
       setState(() {
         if (idx >= _backColors.length) {
@@ -244,6 +245,7 @@ class GameScreenState extends State<GameScreen> {
         });
       } else {
         setState(() {
+          credits.play("claps3.mp3");
           _result = "You guessed it correctly!\nYou used $_guessFreq Guesses!";
           _gameOver = true;
           showDialog<String>(
@@ -255,7 +257,8 @@ class GameScreenState extends State<GameScreen> {
                         child: Text("Main Menu"),
                         onPressed: () {
                           ap.then((AudioPlayer val) => val.resume());
-                          Navigator.popUntil(context,ModalRoute.withName(Navigator.defaultRouteName));
+                          Navigator.popUntil(context,
+                              ModalRoute.withName(Navigator.defaultRouteName));
                         },
                       )
                     ],
@@ -270,7 +273,7 @@ class GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    _scroll=new ScrollController();
+    _scroll = new ScrollController();
     generateNumbertoGuess();
   }
 
@@ -353,7 +356,7 @@ class GameScreenState extends State<GameScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 100,right: 100),
+                    padding: const EdgeInsets.only(left: 100, right: 100),
                     child: RaisedButton(
                       animationDuration: Duration(seconds: 4),
                       color: Colors.white,
