@@ -69,7 +69,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    audioPlayer = player.loop('kahoot.mp3');
+    audioPlayer = player.loop('background.mp3');
     timer = new Timer.periodic(new Duration(seconds: 2), (Timer timer) {
       setState(() {
         idx++;
