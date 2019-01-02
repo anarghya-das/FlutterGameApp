@@ -90,6 +90,7 @@ class GameScreenState extends State<GameScreen> {
           _result = "You guessed it correctly!\nYou used $_guessFreq Guesses!";
           _gameOver = true;
           showDialog<String>(
+            barrierDismissible: false,
               context: context,
               builder: (context) => AlertDialog(
                     content: Text(_result),
