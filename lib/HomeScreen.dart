@@ -64,6 +64,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+    print("Disposed");
   }
 
   @override
@@ -101,12 +102,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         onTap: () {
           audioPlayer.then((AudioPlayer val) => val.pause());
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    GameScreen(t, audioPlayer, _backColors[idx]),
-              ));
+          Navigator.of(context).push(PageRouteBuilder(
+              opaque: true,
+              transitionDuration: Duration(milliseconds: 250),
+              pageBuilder: (context, _, __) {
+                return GameScreen(t, audioPlayer, _backColors[idx]);
+              },
+              transitionsBuilder: (_, animation, __, child) {
+                return SlideTransition(
+                  position:
+                      Tween<Offset>(begin: Offset(0.0, 1.0), end: Offset.zero)
+                          .animate(animation),
+                  child: child,
+                );
+              }));
         },
         title: Text(
           "Guess from 0 to $t",
