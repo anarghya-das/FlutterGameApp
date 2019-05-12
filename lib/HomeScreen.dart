@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_web/material.dart';
 import 'dart:async';
-import 'package:audioplayers/audio_cache.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'dart:math' as math;
 import 'GameScreen.dart';
 
@@ -22,14 +20,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Color bcolor = _backColors[0];
   Timer timer;
   var r = new math.Random();
-  static AudioCache player = new AudioCache();
-  Future<AudioPlayer> audioPlayer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    audioPlayer = player.loop('background.mp3');
     timer = new Timer.periodic(new Duration(seconds: 2), (Timer timer) {
       setState(() {
         idx++;
@@ -39,25 +34,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         bcolor = _backColors[idx];
       });
     });
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    debugPrint("State: ${state.toString()}");
-    switch (state) {
-      case AppLifecycleState.paused:
-        audioPlayer.then((AudioPlayer val) => val.pause());
-        break;
-      case AppLifecycleState.resumed:
-        audioPlayer.then((AudioPlayer val) => val.resume());
-        break;
-      case AppLifecycleState.inactive:
-        audioPlayer.then((AudioPlayer val) => val.pause());
-        break;
-      case AppLifecycleState.suspending:
-        audioPlayer.then((AudioPlayer val) => val.pause());
-        break;
-    }
   }
 
   @override
@@ -101,12 +77,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           radius: 30,
         ),
         onTap: () {
-          audioPlayer.then((AudioPlayer val) => val.pause());
           Navigator.of(context).push(PageRouteBuilder(
               opaque: true,
               transitionDuration: Duration(milliseconds: 250),
               pageBuilder: (context, _, __) {
-                return GameScreen(t, audioPlayer, _backColors[idx]);
+                return GameScreen(t, _backColors[idx]);
               },
               transitionsBuilder: (_, animation, __, child) {
                 return SlideTransition(
